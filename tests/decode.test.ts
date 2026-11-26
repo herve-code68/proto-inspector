@@ -56,9 +56,10 @@ describe("decode resolution", () => {
 
   it("never guesses a type when none is chosen", () => {
     const outcome = decode();
-    expect(outcome.status).toBe("not-attempted");
+    expect(outcome.status).toBe("wire-decoded");
     expect(outcome.messageType).toBeNull();
     expect(outcome.typeSource).toBeNull();
+    expect(outcome.wire).not.toBeInstanceOf(Error);
   });
 
   it("prefers an explicit choice over a remembered type", () => {
@@ -106,10 +107,11 @@ describe("decode resolution", () => {
     expect(decode({ bytes: new Uint8Array(0) }).status).toBe("payload-empty");
   });
 
-  it("does nothing without a schema, even with a type named", () => {
+  it("parses wire data without a schema, even when a type name is supplied", () => {
     const outcome = decode({ root: null, messageType: "game.LoginRequest" });
-    expect(outcome.status).toBe("not-attempted");
+    expect(outcome.status).toBe("wire-decoded");
     expect(outcome.messageType).toBeNull();
+    expect(outcome.wire).not.toBeInstanceOf(Error);
   });
 });
 

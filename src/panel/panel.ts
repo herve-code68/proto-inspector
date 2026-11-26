@@ -491,10 +491,9 @@ function passesFilters(frame: FrameMetadata): boolean {
   if (state.filters.connectionId && frame.connectionId !== state.filters.connectionId) return false;
   if (state.filters.direction && frame.direction !== state.filters.direction) return false;
   if (state.filters.status) {
-    // The stored decodeStatus is what the worker wrote when the frame arrived,
-    // which is always "not-attempted": decoding happens here, on demand. The
-    // badge shows the resolved status, so the filter must read the same value
-    // or a "decoded" filter could never match anything.
+    // The worker stores the transport-time status; the panel computes the
+    // resolved schema/wire result as soon as the frame payload arrives. Keep
+    // filtering aligned with the badge shown in each live row.
     const status = resolvedDecode(frame)?.status ?? frame.decodeStatus;
     if (status !== state.filters.status) return false;
   }
@@ -1070,6 +1069,14 @@ function renderDecodedTab(frame: FrameMetadata, bytes: Uint8Array | null, waitin
         "loaded schema enum (a `// opcode: N` comment), set **Settings → General → Frame prefix** " +
         "to detect it. Otherwise use the Hex tab to inspect the raw bytes."
       : `This payload is not valid protobuf: ${outcome.error ?? "unknown error"}\n\nUse the Hex tab to inspect the raw bytes.`;
+    return;
+  }
+  if (outcome.status === "wire-decoded" && outcome.wire && !(outcome.wire instanceof Error)) {
+    const count = outcome.wire.fields.length;
+    output.textContent =
+      `Automatically parsed as Protobuf wire data: ${count} top-level field(s). ` +
+      "Field numbers and wire types are available without a schema. " +
+      "Load the matching .proto schema to reveal application field names and types, or open the Wire tab for the full field tree.";
     return;
   }
   output.textContent =

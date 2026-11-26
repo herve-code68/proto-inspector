@@ -212,8 +212,12 @@ or whether a length-delimited field is a nested message; the UI says so.
 
 ### Choosing a schema
 
-Nothing is guessed. A frame is decoded when a schema is chosen for it; until then it stays at
-wire-format level (`RAW` in the table, with the field view still available).
+Every incoming and outgoing binary frame is inspected immediately as it arrives. When no
+schema is available, valid Protobuf payloads are parsed automatically at the wire level and
+shown with the **wire parsed** status; malformed or non-Protobuf payloads are labelled with a
+wire error instead of being silently left as raw. This schema-free pass identifies field
+numbers, wire types, scalar interpretations, and nested candidates, but cannot invent the
+application field names or business meaning. Load a matching schema to get named JSON fields.
 
 Pick a type in **Decode as** and the frame decodes immediately. Two options control what
 happens next:
