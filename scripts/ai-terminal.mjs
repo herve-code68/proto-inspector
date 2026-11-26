@@ -62,6 +62,7 @@ rl.on("line", async (line) => {
     return;
   }
 
+  rl.pause();
   messages.push({ role: "user", content: input });
   if (messages.length > maxHistoryMessages + 1) {
     messages.splice(1, messages.length - maxHistoryMessages);
@@ -105,6 +106,7 @@ rl.on("line", async (line) => {
     console.log("Request error:", error?.name === "AbortError" ? "Timed out after 60 seconds." : String(error));
   } finally {
     clearTimeout(timeout);
+    rl.resume();
     rl.prompt();
   }
 });
