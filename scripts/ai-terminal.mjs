@@ -63,14 +63,13 @@ rl.on("line", async (line) => {
   }
 
   messages.push({ role: "user", content: input });
-  const trimmed = messages.length > maxHistoryMessages + 1
-    ? messages.splice(1, messages.length - maxHistoryMessages)
-    : [];
-  void trimmed;
+  if (messages.length > maxHistoryMessages + 1) {
+    messages.splice(1, messages.length - maxHistoryMessages);
+  }
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 60_000);
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 60_000);
     const response = await fetch(endpoint, {
       method: "POST",
       headers: {
@@ -86,7 +85,6 @@ rl.on("line", async (line) => {
       }),
       signal: controller.signal
     });
-    clearTimeout(timeout);
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       const detail = data?.error?.message || `HTTP ${response.status}`;
@@ -107,8 +105,9 @@ rl.on("line", async (line) => {
   } catch (error) {
     messages.pop();
     console.log("Request error:", error?.name === "AbortError" ? "Timed out after 60 seconds." : String(error));
-  }
-  rl.prompt();
+  } finally {
+    clearTimeout(timeout);
+    rl.prompt();
 });
 
 rl.on("close", () => {
