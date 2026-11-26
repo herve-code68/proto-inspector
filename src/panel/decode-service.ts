@@ -194,7 +194,7 @@ export function decodeFrame(request: DecodeRequest): DecodeOutcome {
     };
   }
   return {
-    status: "not-attempted",
+    status: "wire-decoded",
     json: null,
     error: null,
     messageType: null,
