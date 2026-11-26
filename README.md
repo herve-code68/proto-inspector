@@ -497,3 +497,23 @@ instead of using protobufjs's `Function()`-based one.
 
 Source provided as-is for authorized debugging and testing of applications you own or are
 permitted to inspect.
+
+
+## Optional terminal AI helper
+
+The repository includes an opt-in terminal assistant for general protocol-development questions. It does not read capture sessions or files; it only sends text typed into its prompt to OpenRouter.
+
+1. Create an OpenRouter API key at https://openrouter.ai/keys (free models are rate-limited and availability can vary).
+2. In a terminal, enter the key without echoing it or saving it to shell history:
+
+   ```bash
+   read -s OPENROUTER_API_KEY
+   export OPENROUTER_API_KEY
+   npm run ai
+   ```
+
+3. Ask a general question. Use `/reset` to clear in-memory chat history and `/exit` to close.
+
+Optional model override: `export OPENROUTER_MODEL="provider/model-id"`. Default is `openrouter/free`.
+
+**Privacy:** text you enter is sent to the selected provider. Do not paste captured traffic, credentials, personal information, or sensitive data. This helper is not intended for gambling signals or betting decisions. The API key is held only in the current terminal environment and is not written into the repository.
