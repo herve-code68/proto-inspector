@@ -491,10 +491,9 @@ function passesFilters(frame: FrameMetadata): boolean {
   if (state.filters.connectionId && frame.connectionId !== state.filters.connectionId) return false;
   if (state.filters.direction && frame.direction !== state.filters.direction) return false;
   if (state.filters.status) {
-    // The stored decodeStatus is what the worker wrote when the frame arrived,
-    // which is always "not-attempted": decoding happens here, on demand. The
-    // badge shows the resolved status, so the filter must read the same value
-    // or a "decoded" filter could never match anything.
+    // The worker stores the transport-time status; the panel computes the
+    // resolved schema/wire result as soon as the frame payload arrives. Keep
+    // filtering aligned with the badge shown in each live row.
     const status = resolvedDecode(frame)?.status ?? frame.decodeStatus;
     if (status !== state.filters.status) return false;
   }
