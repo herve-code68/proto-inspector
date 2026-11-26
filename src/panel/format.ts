@@ -78,6 +78,8 @@ export function statusBadge(status: FrameMetadata["decodeStatus"]): { label: str
   switch (status) {
     case "decoded":
       return { label: "decoded", tone: "ok" };
+    case "wire-decoded":
+      return { label: "wire parsed", tone: "ok" };
     case "not-attempted":
       return { label: "raw", tone: "muted" };
     case "payload-empty":
