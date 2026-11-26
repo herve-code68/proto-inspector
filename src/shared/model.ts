@@ -24,6 +24,7 @@ export interface ConnectionInfo {
 
 export type DecodeStatus =
   | "decoded"
+  | "wire-decoded"
   | "schema-error"
   | "wire-error"
   | "not-attempted"
