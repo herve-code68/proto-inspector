@@ -1072,6 +1072,14 @@ function renderDecodedTab(frame: FrameMetadata, bytes: Uint8Array | null, waitin
       : `This payload is not valid protobuf: ${outcome.error ?? "unknown error"}\n\nUse the Hex tab to inspect the raw bytes.`;
     return;
   }
+  if (outcome.status === "wire-decoded" && outcome.wire && !(outcome.wire instanceof Error)) {
+    const count = outcome.wire.fields.length;
+    output.textContent =
+      `Automatically parsed as Protobuf wire data: ${count} top-level field(s). ` +
+      "Field numbers and wire types are available without a schema. " +
+      "Load the matching .proto schema to reveal application field names and types, or open the Wire tab for the full field tree.";
+    return;
+  }
   output.textContent =
     "No message type selected. Import a .proto file, choose a message type above and press Decode — " +
     "or open the Wire tab for a schema-free view.";
