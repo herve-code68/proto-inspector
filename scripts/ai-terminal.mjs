@@ -90,15 +90,13 @@ rl.on("line", async (line) => {
       const detail = data?.error?.message || `HTTP ${response.status}`;
       messages.pop();
       console.log("Request failed:", detail);
-      rl.prompt();
       return;
     }
     const answer = data?.choices?.[0]?.message?.content;
     if (typeof answer !== "string" || !answer.trim()) {
       messages.pop();
       console.log("Provider returned an empty response.");
-      rl.prompt();
-      return;
+        return;
     }
     messages.push({ role: "assistant", content: answer });
     console.log("\n" + answer + "\n");
@@ -108,6 +106,7 @@ rl.on("line", async (line) => {
   } finally {
     clearTimeout(timeout);
     rl.prompt();
+  }
 });
 
 rl.on("close", () => {
