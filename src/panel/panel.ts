@@ -663,12 +663,6 @@ function buildRow(frame: FrameMetadata): HTMLTableRowElement {
   badgeEl.textContent = badge.label;
   status.append(badgeEl);
 
-  const badgeEl = document.createElement("span");
-  badgeEl.className = "badge";
-  badgeEl.dataset.tone = badge.tone;
-  badgeEl.textContent = badge.label;
-  status.append(badgeEl);
-
   const type = document.createElement("td");
   const typeName = resolved?.messageType ?? frame.messageType ?? null;
   type.textContent = typeName ?? (frame.protobufLike ? "—" : "");
@@ -707,6 +701,21 @@ function updateMessageCount(visible = visibleFrames().length, start = 0): void {
 /** Replaces one rendered row in place, preserving selection and scroll. */
 function refreshRow(id: string): void {
   const frame = state.frames.find((candidate) => candidate.id === id);
+  const row = el<HTMLTableSectionElement>("message-body").querySelector<HTMLTableRowElement>(
+    `tr[data-frame-id="${id}"]`,
+  );
+  if (!frame || !row) return;
+  const replacement = buildRow(frame);
+  replacement.classList.toggle("is-selected", frame.id === state.selectedFrameId);
+  row.replaceWith(replacement);
+}
+
+function selectFrame(id: string): void {
+  state.selectedFrameId = id;
+  for (const row of el<HTMLTableSectionElement>("message-body").querySelectorAll("tr")) {
+    row.classList.toggle("is-selected", (row as HTMLTableRowElement).dataset.frameId === id);
+  }
+  const frame = state.frames.find((candidate) => candidate.id === id);
   if (frame) {
     state.selectedConnectionId = frame.connectionId;
     // Decode only this message. The payload normally arrived with frame-added;
@@ -716,12 +725,7 @@ function refreshRow(id: string): void {
   send({ type: "request-frame", id });
   refreshRow(id);
   renderDetail();
-  renderDetail();
 }
-
-/* ------------------------------------------------------------------ */
-/* Detail                                                              */
-/* ------------------------------------------------------------------ */
 
 function selectedFrame(): FrameMetadata | null {
   if (!state.selectedFrameId) return null;
