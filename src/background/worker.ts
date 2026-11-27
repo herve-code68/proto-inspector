@@ -239,7 +239,7 @@ async function attachRelatedTarget(session: TabSession, params: unknown): Promis
   } catch {
     // Some target types do not expose these domains; keep capture alive.
   }
-});
+}
 
 /* ------------------------------------------------------------------ */
 /* CDP event handling                                                  */
