@@ -172,8 +172,8 @@ describe("settings validation", () => {
     expect(validateSettings({}).reusePickedSchema).toBe(true);
   });
 
-  it("defaults retention to 500", () => {
-    expect(validateSettings({}).retentionLimit).toBe(500);
+  it("defaults retention to 5000", () => {
+    expect(validateSettings({}).retentionLimit).toBe(5_000);
   });
 });
 
