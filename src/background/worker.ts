@@ -52,6 +52,7 @@ interface TabSession {
   /** Maps CDP's monotonic seconds to wall-clock ms, pinned on first use. */
   timeAnchor: { monotonicMs: number; wallMs: number } | null;
   pageHookActive: boolean;
+  childTargets: Map<string, string>;
 }
 
 const sessions = new Map<number, TabSession>();
@@ -83,6 +84,7 @@ function getSession(tabId: number): TabSession {
     ports: new Set(),
     timeAnchor: null,
     pageHookActive: false,
+    childTargets: new Map(),
   };
   sessions.set(tabId, session);
   return session;
@@ -151,6 +153,9 @@ async function startCdp(session: TabSession): Promise<void> {
     session.errorCode = null;
     try {
       await chrome.debugger.sendCommand({ tabId: session.tabId }, "Network.enable", {});
+      await chrome.debugger.sendCommand({ tabId: session.tabId }, "Target.setAutoAttach", {
+        autoAttach: true, waitForDebuggerOnStart: false, flatten: true,
+      });
     } catch (error) {
       const described = describeAttachError(error);
       session.error = `Debugger attached, but the Network domain could not be enabled: ${described.message}`;
@@ -168,6 +173,7 @@ async function startCdp(session: TabSession): Promise<void> {
 async function stopCdp(session: TabSession): Promise<void> {
   if (!session.attached) return;
   session.attached = false;
+  session.childTargets.clear();
   try {
     await chrome.debugger.detach({ tabId: session.tabId });
   } catch {
@@ -195,7 +201,43 @@ chrome.debugger.onEvent.addListener((source, method, params) => {
   if (typeof source.tabId !== "number") return;
   const session = sessions.get(source.tabId);
   if (!session || !session.attached) return;
-  handleCdpEvent(session, method, params);
+  if (method === "Target.attachedToTarget") {
+    void attachRelatedTarget(session, params);
+    return;
+  }
+  if (method === "Target.detachedFromTarget") {
+    if (isRecord(params) && typeof params.sessionId === "string") session.childTargets.delete(params.sessionId);
+    return;
+  }
+  const targetKey = typeof source.sessionId === "string" ? source.sessionId : "root";
+  if (typeof source.sessionId === "string" && !session.childTargets.has(source.sessionId)) return;
+  const scopedParams = isRecord(params) && typeof params.requestId === "string"
+    ? { ...params, requestId: `${targetKey}:${params.requestId}` }
+    : params;
+  handleCdpEvent(session, method, scopedParams);
+});
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+async function attachRelatedTarget(session: TabSession, params: unknown): Promise<void> {
+  if (!isRecord(params) || typeof params.sessionId !== "string") return;
+  const childSessionId = params.sessionId;
+  if (session.childTargets.has(childSessionId)) return;
+  const info = isRecord(params.targetInfo) ? params.targetInfo : {};
+  const type = typeof info.type === "string" ? info.type : "unknown";
+  const url = typeof info.url === "string" ? info.url : "";
+  session.childTargets.set(childSessionId, `${type} ${url}`.trim());
+  const debuggee: chrome.debugger.Debuggee = { tabId: session.tabId, sessionId: childSessionId };
+  try {
+    await chrome.debugger.sendCommand(debuggee, "Network.enable", {});
+    await chrome.debugger.sendCommand(debuggee, "Target.setAutoAttach", {
+      autoAttach: true, waitForDebuggerOnStart: false, flatten: true,
+    });
+  } catch {
+    // Some target types do not expose these domains; keep capture alive.
+  }
 });
 
 /* ------------------------------------------------------------------ */
