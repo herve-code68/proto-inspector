@@ -149,6 +149,11 @@ describe("byte helpers", () => {
 });
 
 describe("capture store", () => {
+  it("defaults to retaining 5,000 messages", () => {
+    expect(DEFAULT_RETENTION).toBe(5_000);
+    const store = new CaptureStore();
+    expect(store.retention).toBe(5_000);
+  });
   it("counts sent and received frames per connection", () => {
     const store = new CaptureStore();
     store.upsertConnection({ id: "c1", url: "wss://a", state: "open", discoveredAt: 1 });
