@@ -656,8 +656,8 @@ function buildRow(frame: FrameMetadata): HTMLTableRowElement {
   formatCell.className = "col-format";
   formatCell.textContent = frame.kind;
 
-  // Building live stream rows must stay cheap. Decode only the selected
-  // message; a busy socket may deliver hundreds of frames per second.
+  // Incoming frames are decoded in handleWorkerMessage before this row is
+  // built. Rendering only reads the cached result, keeping the table cheap.
   const resolved = state.outcomes.get(frame.id)?.outcome ?? null;
   const status = document.createElement("td");
   const badge = statusBadge(resolved?.status ?? frame.decodeStatus);
