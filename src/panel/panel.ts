@@ -491,11 +491,9 @@ function passesFilters(frame: FrameMetadata): boolean {
   if (state.filters.connectionId && frame.connectionId !== state.filters.connectionId) return false;
   if (state.filters.direction && frame.direction !== state.filters.direction) return false;
   if (state.filters.status) {
-    // The stored decodeStatus is what the worker wrote when the frame arrived,
-    // which is always "not-attempted": decoding happens here, on demand. The
-    // badge shows the resolved status, so the filter must read the same value
-    // or a "decoded" filter could never match anything.
-    const status = resolvedDecode(frame)?.status ?? frame.decodeStatus;
+    // Never decode every frame just to filter a live stream. Use a cached
+    // result when available; otherwise use the capture-time status.
+    const status = state.outcomes.get(frame.id)?.outcome.status ?? frame.decodeStatus;
     if (status !== state.filters.status) return false;
   }
   const search = state.filters.search.trim().toLowerCase();
@@ -654,9 +652,17 @@ function buildRow(frame: FrameMetadata): HTMLTableRowElement {
   formatCell.className = "col-format";
   formatCell.textContent = frame.kind;
 
-  const resolved = resolvedDecode(frame);
+  // Building live stream rows must stay cheap. Decode only the selected
+  // message; a busy socket may deliver hundreds of frames per second.
+  const resolved = state.outcomes.get(frame.id)?.outcome ?? null;
   const status = document.createElement("td");
   const badge = statusBadge(resolved?.status ?? frame.decodeStatus);
+  const badgeEl = document.createElement("span");
+  badgeEl.className = "badge";
+  badgeEl.dataset.tone = badge.tone;
+  badgeEl.textContent = badge.label;
+  status.append(badgeEl);
+
   const badgeEl = document.createElement("span");
   badgeEl.className = "badge";
   badgeEl.dataset.tone = badge.tone;
@@ -701,23 +707,15 @@ function updateMessageCount(visible = visibleFrames().length, start = 0): void {
 /** Replaces one rendered row in place, preserving selection and scroll. */
 function refreshRow(id: string): void {
   const frame = state.frames.find((candidate) => candidate.id === id);
-  const row = el<HTMLTableSectionElement>("message-body").querySelector<HTMLTableRowElement>(
-    `tr[data-frame-id="${id}"]`,
-  );
-  if (!frame || !row) return;
-  const replacement = buildRow(frame);
-  replacement.classList.toggle("is-selected", frame.id === state.selectedFrameId);
-  row.replaceWith(replacement);
-}
-
-function selectFrame(id: string): void {
-  state.selectedFrameId = id;
-  for (const row of el<HTMLTableSectionElement>("message-body").querySelectorAll("tr")) {
-    row.classList.toggle("is-selected", (row as HTMLTableRowElement).dataset.frameId === id);
+  if (frame) {
+    state.selectedConnectionId = frame.connectionId;
+    // Decode only this message. The payload normally arrived with frame-added;
+    // if not, the detail view will show its normal waiting state.
+    resolvedDecode(frame);
   }
-  const frame = state.frames.find((candidate) => candidate.id === id);
-  if (frame) state.selectedConnectionId = frame.connectionId;
   send({ type: "request-frame", id });
+  refreshRow(id);
+  renderDetail();
   renderDetail();
 }
 
