@@ -228,6 +228,10 @@ function handleWorkerMessage(message: WorkerResponse | WorkerEvent): void {
     case "frame-added": {
       state.frames.push(message.frame);
       state.payloads.set(message.payload.id, message.payload);
+      // Decode each incoming frame as it arrives, not only after row selection.
+      // The payload is already available, so the result is cached before the
+      // live row is built.
+      resolvedDecode(message.frame);
       trimLocalFrames();
       if (passesFilters(message.frame)) appendRow(message.frame);
       updateMessageCount();
