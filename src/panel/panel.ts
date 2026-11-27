@@ -2011,22 +2011,4 @@ async function copySelected(): Promise<void> {
 
 /* ------------------------------------------------------------------ */
 
-void bootstrap();  if (outcome.wire && !(outcome.wire instanceof Error)) {
-    output.replaceChildren();
-    const note = document.createElement("p");
-    note.className = "muted";
-    note.textContent =
-      "Automatic binary inspection (schema-free). Field numbers and wire types are read from the bytes; names and meanings require a protocol schema.";
-    output.append(note);
-    for (const field of outcome.wire.fields) output.append(renderWireField(field, 0));
-    if (outcome.wire.truncated) {
-      const limit = document.createElement("p");
-      limit.className = "wire-note";
-      limit.textContent = outcome.wire.truncatedReason ?? "Parsing stopped at a safety limit.";
-      output.append(limit);
-    }
-    return;
-  }
-  output.textContent =
-    "No schema selected. Binary inspection was attempted automatically. Import a .proto file to decode named fields, or open the Hex tab to inspect raw bytes.";
-
+void bootstrap();
