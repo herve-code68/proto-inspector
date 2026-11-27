@@ -183,7 +183,9 @@ async function stopCdp(session: TabSession): Promise<void> {
 }
 
 chrome.debugger.onDetach.addListener((source, reason) => {
-  if (typeof source.tabId !== "number") return;
+  // A related child target can detach independently; only a root detach ends
+  // the tab-level capture session.
+  if (typeof source.tabId !== "number" || typeof source.sessionId === "string") return;
   const session = sessions.get(source.tabId);
   if (!session) return;
   session.attached = false;
