@@ -1022,9 +1022,18 @@ function renderDecodedTab(frame: FrameMetadata, bytes: Uint8Array | null, waitin
   if (frame.kind === "text") {
     renderTypeSource(null);
     const text = state.payloads.get(frame.id)?.text ?? null;
-    output.textContent = text === null
-      ? "This is a text frame."
-      : `This is a text frame; schema decoding does not apply.\n\n${text}`;
+    if (text === null) {
+      output.textContent = "This is a text frame.";
+      return;
+    }
+    // Deterministic local handling: format JSON text frames automatically.
+    // Non-JSON text is preserved exactly; no network or AI is involved.
+    try {
+      const parsed: unknown = JSON.parse(text);
+      output.textContent = `JSON text frame (parsed locally)\n\n${JSON.stringify(parsed, null, 2)}`;
+    } catch {
+      output.textContent = `Text frame (not JSON)\n\n${text}`;
+    }
     return;
   }
   if (bytes === null) {
