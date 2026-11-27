@@ -54,7 +54,7 @@ import {
   type ExportFrame,
 } from "./format";
 
-const MAX_RENDERED_ROWS = 500;
+const MAX_RENDERED_ROWS = 5_000;
 const MAX_WAIT_MS = 10_000;
 
 const el = <T extends HTMLElement>(id: string): T => {
@@ -114,7 +114,7 @@ const state: PanelState = {
   selectedFrameId: null,
   payloads: new Map(),
   settings: {
-    retentionLimit: 500,
+    retentionLimit: 5_000,
     framePrefix: "auto",
     autoDecode: true,
     reusePickedSchema: true,
