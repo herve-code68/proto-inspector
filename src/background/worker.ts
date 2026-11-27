@@ -183,9 +183,8 @@ async function stopCdp(session: TabSession): Promise<void> {
 }
 
 chrome.debugger.onDetach.addListener((source, reason) => {
-  // A related child target can detach independently; only a root detach ends
-  // the tab-level capture session.
-  if (typeof source.tabId !== "number" || typeof source.sessionId === "string") return;
+  // onDetach reports termination of the root tab debugger session.
+  if (typeof source.tabId !== "number") return;
   const session = sessions.get(source.tabId);
   if (!session) return;
   session.attached = false;
@@ -231,7 +230,7 @@ async function attachRelatedTarget(session: TabSession, params: unknown): Promis
   const type = typeof info.type === "string" ? info.type : "unknown";
   const url = typeof info.url === "string" ? info.url : "";
   session.childTargets.set(childSessionId, `${type} ${url}`.trim());
-  const debuggee: chrome.debugger.Debuggee = { tabId: session.tabId, sessionId: childSessionId };
+  const debuggee: chrome.debugger.DebuggerSession = { tabId: session.tabId, sessionId: childSessionId };
   try {
     await chrome.debugger.sendCommand(debuggee, "Network.enable", {});
     await chrome.debugger.sendCommand(debuggee, "Target.setAutoAttach", {
